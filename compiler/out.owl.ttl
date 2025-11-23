@@ -1,0 +1,29 @@
+@prefix : <http://example.org/ctx#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+:Vulnerability a owl:Class .
+:BufferOverflow a owl:Class ; rdfs:subClassOf :Vulnerability .
+:CodeInjection a owl:Class ; rdfs:subClassOf :Vulnerability .
+
+:Software a owl:Class .
+:API a owl:Class ; rdfs:subClassOf :Software .
+:MemorySpace a owl:Class ; rdfs:subClassOf :Software .
+:Module a owl:Class ; rdfs:subClassOf :Software .
+
+:e1 a owl:ObjectProperty ;
+    rdfs:domain :Vulnerability ;
+    rdfs:range  :Software .
+:BufferOverflow rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :e1 ;
+    owl:someValuesFrom :MemorySpace
+] .
+:CodeInjection rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :e1 ;
+    owl:someValuesFrom :API
+] .
+
+:ExecutionEnvironment a owl:Class .
+# TODO pushout(e1, e2)
