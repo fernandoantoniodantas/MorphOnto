@@ -1,0 +1,16 @@
+digraph G {
+  rankdir=LR;
+  subgraph cluster_Vulnerability {
+    label = "Vulnerability";
+    CodeInjection [shape=box];
+    BufferOverflow [shape=box];
+  }
+  subgraph cluster_Software {
+    label = "Software";
+    MemorySpace [shape=box];
+    Module [shape=box];
+    API [shape=box];
+  }
+  BufferOverflow -> MemorySpace [label="e1"];
+  CodeInjection -> API [label="e1"];
+}
