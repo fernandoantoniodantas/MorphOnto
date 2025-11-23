@@ -1,0 +1,26 @@
+.palette {
+  width: 150px;
+  background: #f0f0f0;
+  border-right: 1px solid #ccc;
+  padding: 10px;
+  font-family: sans-serif;
+}
+
+.palette h4 {
+  margin-top: 0;
+}
+
+.palette-item {
+  background: white;
+  padding: 10px;
+  border: 1px solid #888;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  cursor: grab;
+  text-align: center;
+  font-weight: bold;
+}
+
+.palette-item:active {
+  cursor: grabbing;
+}
