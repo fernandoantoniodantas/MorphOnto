@@ -1,0 +1,45 @@
+.sidebar {
+  width: 200px;
+  background: #f6f6f6;
+  border-right: 1px solid #ddd;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.sidebar-btn {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  background: white;
+  border: 1px solid #ccc;
+  transition: 0.2s;
+}
+
+.sidebar-btn:hover {
+  background: #eaeaea;
+}
+
+/* Colors per element type */
+.context-btn {
+  border-left: 5px solid #0a58ca;
+}
+
+.ontology-btn {
+  border-left: 5px solid #198754;
+}
+
+.concept-btn {
+  border-left: 5px solid #6f42c1;
+}
