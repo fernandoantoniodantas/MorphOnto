@@ -1,0 +1,125 @@
+/***********************************
+ RESET GERAL
+***********************************/
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: sans-serif;
+}
+
+/***********************************
+ LAYOUT PRINCIPAL — 3 COLUNAS
+***********************************/
+.editor-container {
+  display: grid;
+  grid-template-columns: 260px 1fr 1fr; /* Sidebar | Canvas | Output */
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/***********************************
+ COLUNA 1 — Sidebar
+***********************************/
+.sidebar {
+  padding: 20px;
+  border-right: 1px solid #ccc;
+  background: #f3f3f3;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.sidebar button {
+  width: 100%;
+  padding: 12px;
+  cursor: pointer;
+  background: #e0e0e0;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.sidebar button:hover {
+  background: #d5d5d5;
+}
+
+.compile-btn {
+  margin-top: 20px;
+  background: #0d6efd;
+  border: none;
+  color: white;
+}
+
+.compile-btn:hover {
+  background: #0b5cd6;
+}
+
+/***********************************
+ COLUNA 2 — Canvas (ReactFlow)
+***********************************/
+.canvas-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  /* fundo do canvas */
+  background: #fafafa;
+
+  border-right: 1px solid #ccc;
+}
+
+/***********************************
+ COLUNA 3 — Painel de Output
+***********************************/
+.output-panel {
+  padding: 20px;
+  overflow-y: auto;
+  background: #f8f8f8;
+}
+
+.output-section {
+  margin-bottom: 20px;
+}
+
+.output-section h3 {
+  margin-bottom: 6px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 6px;
+}
+
+.output-box {
+  background: #eee;
+  border-radius: 4px;
+  padding: 12px;
+  min-height: 60px;
+  font-family: monospace;
+  font-size: 13px;
+  color: #444;
+  white-space: pre-wrap;
+}
+
+/***********************************
+ ANIMAÇÃO (click)
+***********************************/
+button {
+  transition: 0.2s ease-in-out;
+}
+
+button:active {
+  transform: scale(0.97);
+}
