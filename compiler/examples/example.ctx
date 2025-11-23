@@ -1,0 +1,17 @@
+ontology Vulnerability {
+    BufferOverflow
+    CodeInjection
+}
+
+ontology Software {
+    Module
+    API
+    MemorySpace
+}
+
+morphism e1: Vulnerability -> Software {
+    BufferOverflow -> MemorySpace
+    CodeInjection  -> API
+}
+
+pushout ExecutionEnvironment = IntegrateContexts(e1, e2)
