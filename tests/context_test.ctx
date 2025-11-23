@@ -1,0 +1,31 @@
+context Software {
+    ontology Software {
+        Module API Process
+    }
+}
+
+context OperatingSystem {
+    ontology OperatingSystem {
+        Kernel Syscall AddressSpace
+    }
+}
+
+context Vulnerability {
+    ontology Vulnerability {
+        BufferOverflow CodeInjection
+    }
+
+    morphism e1 : Vulnerability -> Software {
+        BufferOverflow -> Process
+        CodeInjection  -> API
+    }
+
+    morphism e2 : Vulnerability -> OperatingSystem {
+        BufferOverflow -> AddressSpace
+        CodeInjection  -> Syscall
+    }
+}
+
+context Integration {
+    pushout ExecEnv = IntegrateContexts(Software, OperatingSystem)
+}
