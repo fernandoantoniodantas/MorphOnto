@@ -1,125 +1,64 @@
-/***********************************
- RESET GERAL
-***********************************/
-html, body, #root {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-  font-family: sans-serif;
-}
-
-/***********************************
- LAYOUT PRINCIPAL — 3 COLUNAS
-***********************************/
+/* LAYOUT PRINCIPAL — 3 colunas */
 .editor-container {
   display: grid;
-  grid-template-columns: 260px 1fr 1fr; /* Sidebar | Canvas | Output */
-  height: 100vh;
+  grid-template-columns: 240px 1fr 380px; /* Sidebar | Canvas | Output */
   width: 100vw;
+  height: 100vh;
   overflow: hidden;
 }
 
-/***********************************
- COLUNA 1 — Sidebar
-***********************************/
+/* SIDEBAR */
 .sidebar {
-  padding: 20px;
+  background: #f8f9fa;
   border-right: 1px solid #ccc;
-  background: #f3f3f3;
-
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  padding: 16px;
 }
 
-.sidebar h2 {
-  margin-top: 0;
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.sidebar button {
+/* CANVAS */
+.canvas-area {
+  background: #fafafa;
+  position: relative;
+  height: 100%;
   width: 100%;
+}
+
+/* OUTPUT PANEL */
+.output-panel {
+  background: #ffffff;
+  border-left: 1px solid #ccc;
   padding: 12px;
+  overflow-y: auto;
+}
+
+/* TABS DO OUTPUT */
+.output-tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+}
+
+.output-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
   cursor: pointer;
-  background: #e0e0e0;
-  border: 1px solid #bbb;
-  border-radius: 6px;
-  font-size: 15px;
-  font-weight: bold;
+  font-weight: 600;
+  background: #eee;
+  border-right: 1px solid #ddd;
 }
 
-.sidebar button:hover {
-  background: #d5d5d5;
-}
-
-.compile-btn {
-  margin-top: 20px;
-  background: #0d6efd;
-  border: none;
+.output-tab.active {
+  background: #2962ff;
   color: white;
 }
 
-.compile-btn:hover {
-  background: #0b5cd6;
-}
-
-/***********************************
- COLUNA 2 — Canvas (ReactFlow)
-***********************************/
-.canvas-panel {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-
-  /* fundo do canvas */
-  background: #fafafa;
-
-  border-right: 1px solid #ccc;
-}
-
-/***********************************
- COLUNA 3 — Painel de Output
-***********************************/
-.output-panel {
-  padding: 20px;
-  overflow-y: auto;
-  background: #f8f8f8;
-}
-
-.output-section {
-  margin-bottom: 20px;
-}
-
-.output-section h3 {
-  margin-bottom: 6px;
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 6px;
-}
-
+/* CAIXA DE TEXTO DO OUTPUT */
 .output-box {
-  background: #eee;
-  border-radius: 4px;
-  padding: 12px;
-  min-height: 60px;
-  font-family: monospace;
-  font-size: 13px;
-  color: #444;
+  margin-top: 12px;
   white-space: pre-wrap;
-}
-
-/***********************************
- ANIMAÇÃO (click)
-***********************************/
-button {
-  transition: 0.2s ease-in-out;
-}
-
-button:active {
-  transform: scale(0.97);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 15px;
+  background: #f4f4f4;
+  padding: 12px;
+  border-radius: 4px;
+  min-height: 300px;
 }
