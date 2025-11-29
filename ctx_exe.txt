@@ -1,0 +1,11 @@
+ontology Segurança {
+
+  concept Vulnerability
+  concept Consequence
+  concept Attack
+
+  Vulnerability ⊑ RiskFactor
+  Attack ⊑ Event
+
+  causes: Vulnerability → Consequence
+}
