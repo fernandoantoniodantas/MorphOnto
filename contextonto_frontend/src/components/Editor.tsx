@@ -4,10 +4,12 @@ import "../styles/editor.css";
 import Sidebar from "./Sidebar";
 import Canvas from "./Canvas";
 import OutputPanel from "./OutputPanel";
+
 import type { Node, Edge } from "reactflow";
 
-export default function Editor() {
+import { generateCtx } from "../utils/generateCtx";
 
+export default function Editor() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
 
@@ -15,37 +17,26 @@ export default function Editor() {
   const [owlOutput, setOwlOutput] = useState("");
   const [dotOutput, setDotOutput] = useState("");
 
-  // ------------------------------------------------------
-  // MENU CONTEXTUAL
-  // ------------------------------------------------------
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    nodeId: string | null;
-  }>({ x: 0, y: 0, nodeId: null });
+  const [contextMenu, setContextMenu] = useState({
+    x: 0,
+    y: 0,
+    nodeId: null as string | null
+  });
 
   const handleNodeContextMenu = useCallback((event: any, node: Node) => {
     event.preventDefault();
     setContextMenu({
       x: event.clientX,
       y: event.clientY,
-      nodeId: node.id,
+      nodeId: node.id
     });
   }, []);
 
-  const closeContextMenu = () => {
+  const closeContextMenu = () =>
     setContextMenu({ x: 0, y: 0, nodeId: null });
-  };
-
-  const deleteNode = () => {
-    if (!contextMenu.nodeId) return;
-    setNodes((nds) => nds.filter((n) => n.id !== contextMenu.nodeId));
-    closeContextMenu();
-  };
 
   const renameNode = () => {
     if (!contextMenu.nodeId) return;
-
     const newName = prompt("Novo nome:");
     if (!newName) return;
 
@@ -56,148 +47,71 @@ export default function Editor() {
           : n
       )
     );
-
     closeContextMenu();
   };
 
-  // ------------------------------------------------------
-  // SANITIZAÇÃO: transforma labels em nomes válidos
-  // ------------------------------------------------------
-  const sanitizeName = (label: string) => {
-    label = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    label = label.replace(/[^a-zA-Z0-9 ]/g, "");
+  const deleteNode = () => {
+    if (!contextMenu.nodeId) return;
 
-    if (label.startsWith("Contexto")) return "Ctx" + label.replace(/\D/g, "");
-    if (label.startsWith("Ontologia")) return "Ont" + label.replace(/\D/g, "");
-    if (label.startsWith("Conceito")) return "Cpt" + label.replace(/\D/g, "");
-
-    return label.replace(/\s+/g, "_");
+    setNodes((nds) => nds.filter((n) => n.id !== contextMenu.nodeId));
+    setEdges((eds) =>
+      eds.filter(
+        (e) =>
+          e.source !== contextMenu.nodeId &&
+          e.target !== contextMenu.nodeId
+      )
+    );
+    closeContextMenu();
   };
 
-  // ------------------------------------------------------
-  // SEMÂNTICA: validar morphisms
-  // ------------------------------------------------------
-  const isValidMorphism = (src: Node, tgt: Node) => {
-    if (tgt.type === "Contexto") {
-      if (src.type === "Ontologia" || src.type === "Conceito") {
-        return true;
+  const handleAddNode = useCallback(
+    (type: string) => {
+      if (type === "context") {
+        const exists = nodes.some((n) => n.type === "context");
+        if (exists) {
+          alert("Só é permitido um único contexto.");
+          return;
+        }
       }
-    }
-    return false;
-  };
 
-  // ------------------------------------------------------
-  // Correção automática da direção do morphism
-  // ENTIDADE -> CONTEXTO
-  // ------------------------------------------------------
-  const fixDirection = (src: Node, tgt: Node): [Node, Node] => {
-    if (src.type === "Contexto" && tgt.type !== "Contexto") {
-      return [tgt, src];
-    }
-    return [src, tgt];
-  };
+      const id = `${type}_${nodes.length + 1}`;
+      const newNode: Node = {
+        id,
+        type,
+        data: { label: `${type} ${nodes.length + 1}` },
+        position: { x: 200, y: 120 + nodes.length * 80 }
+      };
 
-  // ------------------------------------------------------
-  // GERAÇÃO DO .CTX (100% compatível com o compilador)
-  // ------------------------------------------------------
-  const generateCtx = () => {
-    let output = "";
-
-    const contextNodes = nodes.filter((n) => n.type === "Contexto");
-    const ontologyNodes = nodes.filter((n) => n.type === "Ontologia");
-    const conceptNodes = nodes.filter((n) => n.type === "Conceito");
-
-    const contextName =
-      contextNodes.length > 0
-        ? sanitizeName(contextNodes[0].data.label)
-        : "GeneratedContext";
-
-    output += `context ${contextName} {\n`;
-
-    // ------------------------------------------------------
-    // CORREÇÃO IMPORTANTE: NÃO GERAR "{}"
-    // ------------------------------------------------------
-    ontologyNodes.forEach((ont) => {
-      const name = sanitizeName(ont.data.label);
-      output += `    ontology ${name} {\n`;
-      output += `    }\n`;
-    });
-
-    conceptNodes.forEach((c) => {
-      const name = sanitizeName(c.data.label);
-      output += `    concept ${name};\n`;
-    });
-
-    edges.forEach((e) => {
-      const src = nodes.find((n) => n.id === e.source);
-      const tgt = nodes.find((n) => n.id === e.target);
-
-      if (!src || !tgt) return;
-      if (src.type === "Pushout" || tgt.type === "Pushout") return;
-
-      let [srcNode, tgtNode] = fixDirection(src, tgt);
-
-      if (!isValidMorphism(srcNode, tgtNode)) return;
-
-      const srcName = sanitizeName(srcNode.data.label);
-      const tgtName = sanitizeName(tgtNode.data.label);
-
-      output += `    morphism ${srcName} -> ${tgtName};\n`;
-    });
-
-    output += "}\n";
-
-    return output;
-  };
+      setNodes((prev) => [...prev, newNode]);
+    },
+    [nodes]
+  );
 
   const handleGenerateCtx = () => {
-    const text = generateCtx();
+    const text = generateCtx(nodes, edges);
     setCtxOutput(text);
   };
 
-  // ------------------------------------------------------
-  // COMPILAR NO BACKEND
-  // ------------------------------------------------------
   const compileBackend = async () => {
-    const ctxText = generateCtx();
+    const ctx = generateCtx(nodes, edges);
 
     const resp = await fetch("http://localhost:5001/compile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ctx: ctxText })
+      body: JSON.stringify({ ctx })
     });
 
     const data = await resp.json();
 
     if (data.success) {
-      setOwlOutput(data.owl);
-      setDotOutput(data.dot);
+      setOwlOutput(data.owl || "Sem OWL");
+      setDotOutput(data.dot || "Sem DOT");
     } else {
       setOwlOutput("Erro ao gerar OWL:\n" + data.errors);
       setDotOutput("");
     }
   };
 
-  // ------------------------------------------------------
-  // ADICIONAR NÓS
-  // ------------------------------------------------------
-  const handleAddNode = useCallback((type: string) => {
-    const id = `${type}_${nodes.length + 1}`;
-
-    const newNode: Node = {
-      id,
-      type,
-      position: { x: 150, y: 80 + nodes.length * 80 },
-      data: { label: `${type} ${nodes.length + 1}` }
-    };
-
-    setNodes((nds) => [...nds, newNode]);
-
-  }, [nodes]);
-
-  // ------------------------------------------------------
-  // RENDER
-  // ------------------------------------------------------
   return (
     <div className="editor-container" onClick={closeContextMenu}>
 
@@ -242,11 +156,7 @@ export default function Editor() {
           </div>
 
           <div
-            style={{
-              padding: "4px 8px",
-              cursor: "pointer",
-              color: "red"
-            }}
+            style={{ padding: "4px 8px", cursor: "pointer", color: "red" }}
             onClick={deleteNode}
           >
             Excluir
