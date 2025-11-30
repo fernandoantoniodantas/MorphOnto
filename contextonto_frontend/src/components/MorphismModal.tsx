@@ -1,33 +1,36 @@
-import { useState } from "react";
-import "../styles/modal.css";
+import React from "react";
 
-interface MorphismModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (name: string) => void;
+interface MorphismData {
+  entityOnt?: string;
+  contextOnt?: string;
+  from?: string;
+  to?: string;
 }
 
-export default function MorphismModal({ isOpen, onClose, onConfirm }: MorphismModalProps) {
-  const [name, setName] = useState("e1");
+interface MorphismModalProps {
+  open: boolean;
+  data: MorphismData | null;
+  onConfirm: (value: MorphismData) => void;
+  onCancel: () => void;
+}
 
-  if (!isOpen) {
-    return null;
-  }
+export default function MorphismModal({ open, data, onConfirm, onCancel }: MorphismModalProps) {
+  if (!open) return null;
+
+  const { entityOnt, contextOnt, from, to } = data || {};
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-box">
-        <h3>Create Morphism</h3>
-        <label>Name:</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoFocus
-        />
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Morfismo</h2>
+        <p>De: {from}</p>
+        <p>Para: {to}</p>
+        <p>Ontologia da entidade: {entityOnt}</p>
+        <p>Ontologia de contexto: {contextOnt}</p>
 
-        <div className="modal-buttons">
-          <button className="btn-confirm" onClick={() => onConfirm(name)}>Confirm</button>
-          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+        <div className="modal-actions">
+          <button onClick={() => onConfirm({ entityOnt, contextOnt, from, to })}>Confirmar</button>
+          <button onClick={onCancel}>Cancelar</button>
         </div>
       </div>
     </div>

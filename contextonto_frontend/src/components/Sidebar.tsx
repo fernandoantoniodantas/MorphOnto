@@ -1,106 +1,110 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface SidebarProps {
-  onAddNode: (type: string) => void;
+  addEntityOntology: () => void;
+  addContextOntology: () => void;
+  addConcept: () => void;
   onGenerateCtx: () => void;
   onCompile: () => void;
 }
 
 export default function Sidebar({
-  onAddNode,
+  addEntityOntology,
+  addContextOntology,
+  addConcept,
   onGenerateCtx,
   onCompile
 }: SidebarProps) {
   return (
     <div
-      className="sidebar"
       style={{
-        width: "220px",
+        width: "260px",
         padding: "20px",
         borderRight: "1px solid #ccc",
-        background: "#f8f9fa",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px"
+        background: "#fafafa"
       }}
     >
-      <h3 style={{ marginBottom: "10px" }}>ContextOnto</h3>
+      <h2>Adicionar Nós</h2>
 
-      {/* criar CONTEXTO */}
       <button
-        onClick={() => onAddNode("context")}
+        onClick={addEntityOntology}
         style={{
-          padding: "10px",
-          cursor: "pointer",
-          background: "#e3f2fd",
-          border: "1px solid #90caf9",
-          borderRadius: "6px",
+          width: "100%",
+          padding: "14px",
+          background: "#256eff",
+          color: "white",
+          borderRadius: "8px",
+          marginBottom: "12px",
+          fontSize: "17px",
           fontWeight: "600"
         }}
       >
-        + Add Context
+        + Ontologia da Entidade (E)
       </button>
 
-      {/* criar ONTOLOGIA */}
       <button
-        onClick={() => onAddNode("ontology")}
+        onClick={addContextOntology}
         style={{
-          padding: "10px",
-          cursor: "pointer",
-          background: "#e8f5e9",
-          border: "1px solid #a5d6a7",
-          borderRadius: "6px",
+          width: "100%",
+          padding: "14px",
+          background: "#2b8a3e",
+          color: "white",
+          borderRadius: "8px",
+          marginBottom: "12px",
+          fontSize: "17px",
           fontWeight: "600"
         }}
       >
-        + Add Ontology
+        + Ontologia de Contexto (C)
       </button>
 
-      {/* criar CONCEITO */}
       <button
-        onClick={() => onAddNode("concept")}
+        onClick={addConcept}
         style={{
-          padding: "10px",
-          cursor: "pointer",
-          background: "#fff8e1",
-          border: "1px solid #ffe082",
-          borderRadius: "6px",
+          width: "100%",
+          padding: "14px",
+          background: "#6c2bd2",
+          color: "white",
+          borderRadius: "8px",
+          marginBottom: "22px",
+          fontSize: "17px",
           fontWeight: "600"
         }}
       >
-        + Add Concept
+        + Conceito
       </button>
 
-      <hr />
+      <h2>Operações</h2>
 
-      {/* gerar ctx */}
       <button
         onClick={onGenerateCtx}
         style={{
-          padding: "10px",
-          cursor: "pointer",
-          background: "#e0e0e0",
-          border: "1px solid #bdbdbd",
-          borderRadius: "6px",
+          width: "100%",
+          padding: "14px",
+          background: "#0ea5e9",
+          color: "white",
+          borderRadius: "8px",
+          marginBottom: "12px",
+          fontSize: "17px",
           fontWeight: "600"
         }}
       >
-        Generate .ctx
+        Gerar .CTX (modelo)
       </button>
 
-      {/* compilar */}
       <button
         onClick={onCompile}
         style={{
-          padding: "10px",
-          cursor: "pointer",
-          background: "#d1c4e9",
-          border: "1px solid #b39ddb",
-          borderRadius: "6px",
+          width: "100%",
+          padding: "14px",
+          background: "#f97316",
+          color: "white",
+          borderRadius: "8px",
+          fontSize: "17px",
           fontWeight: "600"
         }}
       >
-        Compile (OWL + DOT)
+        Compilar (OWL / DOT)
       </button>
     </div>
   );

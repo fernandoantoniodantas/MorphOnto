@@ -1,0 +1,21 @@
+# ============================================
+#  Arquivo CTX gerado automaticamente
+#  Nós: 6
+#  Arestas: 2
+#  Ontologias: entidade=1, contexto=1
+# ============================================
+
+entity ontology Vulnerability {
+    concept BufferOverflow
+    concept CodeInjection
+}
+
+context ontology Software {
+    concept Process
+    concept API
+}
+
+morphism Vulnerability_to_Software : Vulnerability → Software {
+    BufferOverflow ↦ Process
+    CodeInjection ↦ API
+}

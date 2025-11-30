@@ -1,48 +1,77 @@
+import React from "react";
 import { Handle, Position } from "reactflow";
+import type { NodeProps } from "reactflow";
 
-interface NodeProps {
-  data: { label: string };
+export interface ConceptNodeData {
+  label: string;
 }
 
-export default function ConceptNode({ data }: NodeProps) {
+export default function ConceptNode({ data }: NodeProps<ConceptNodeData>) {
   return (
     <div
       style={{
-        padding: "12px 16px",
-        background: "#fff3cd",
-        border: "2px solid #c9a84c",
-        borderRadius: "10px",
-        fontWeight: "600",
-        color: "#7a5b00",
-        minWidth: "150px",
+        width: "90px",
+        minHeight: "36px",
+        padding: "6px 8px",
+        boxSizing: "border-box",
+
+        background: "#6c2bd2",
+        color: "white",
+        borderRadius: "6px",
+        fontSize: "12px",
+        fontWeight: 600,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         textAlign: "center",
+        cursor: "grab",
         position: "relative",
-        boxShadow: "0px 2px 4px rgba(0,0,0,0.15)"
+
+        zIndex: 100,          // ⭐ garante que fica acima da ontologia
+        pointerEvents: "auto" // ⭐ para poder clicar e arrastar normalmente
       }}
     >
-      {/* Saída */}
+      {data.label}
+
+      {/* HANDLE DE ENTRADA */}
       <Handle
-        type="source"
-        position={Position.Right}
+        type="target"
+        id="in"
+        position={Position.Top}
         style={{
-          background: "#cc9a06",
-          width: 12,
-          height: 12,
+          width: 10,
+          height: 10,
+          background: "white",
+          border: "2px solid black",
           borderRadius: "50%",
+          cursor: "crosshair",
+
+          position: "absolute",
+          top: -6,
+
+          zIndex: 200,         // ⭐ obrigatoriamente NA FRENTE
+          pointerEvents: "auto",
         }}
       />
 
-      🟨 {data.label}
-
-      {/* Entrada */}
+      {/* HANDLE DE SAÍDA */}
       <Handle
-        type="target"
-        position={Position.Left}
+        type="source"
+        id="out"
+        position={Position.Bottom}
         style={{
-          background: "#cc9a06",
-          width: 12,
-          height: 12,
+          width: 10,
+          height: 10,
+          background: "white",
+          border: "2px solid black",
           borderRadius: "50%",
+          cursor: "crosshair",
+
+          position: "absolute",
+          bottom: -6,
+
+          zIndex: 200,         // ⭐ idem
+          pointerEvents: "auto",
         }}
       />
     </div>

@@ -1,112 +1,120 @@
-import React, { useCallback } from "react";
+import { useCallback, useState } from "react";
 import ReactFlow, {
-  addEdge,
-  applyNodeChanges,
-  applyEdgeChanges,
   Background,
   Controls,
   MiniMap,
+  applyNodeChanges,
+  applyEdgeChanges,
   type Node,
   type Edge,
   type NodeChange,
   type EdgeChange,
   type Connection,
-  type NodeTypes
+  type NodeTypes,
+  type ReactFlowInstance
 } from "reactflow";
 
 import "reactflow/dist/style.css";
 
-// === IMPORTAR SEUS COMPONENTES DE NÓ ===
 import ContextNode from "../nodes/ContextNode";
 import OntologyNode from "../nodes/OntologyNode";
 import ConceptNode from "../nodes/ConceptNode";
 
-// === REGISTRO DOS TIPOS DE NÓ ===
+// ------------------------------------
+// TIPOS DE NÓS
+// ------------------------------------
 const nodeTypes: NodeTypes = {
   context: ContextNode,
   ontology: OntologyNode,
   concept: ConceptNode
 };
 
-// =======================================
-// DETECTAR SE UM CONCEITO FOI COLOCADO
-// DENTRO DE UMA ONTOLOGIA
-// =======================================
-function detectConceptInsideOntology(movingNode: Node, nodes: Node[]) {
-  if (movingNode.type !== "concept") return null;
-
-  const movingPos = movingNode.positionAbsolute || movingNode.position;
-  const ontologies = nodes.filter((n) => n.type === "ontology");
-
-  for (const ont of ontologies) {
-    const oPos = ont.positionAbsolute || ont.position;
-
-    const oW = ont.width || 160;
-    const oH = ont.height || 80;
-
-    const inside =
-      movingPos.x > oPos.x &&
-      movingPos.x < oPos.x + oW &&
-      movingPos.y > oPos.y &&
-      movingPos.y < oPos.y + oH;
-
-    if (inside) return ont;
-  }
-
-  return null;
-}
-
-// =======================================
-// CANVAS
-// =======================================
+// ------------------------------------
+// PROPS
+// ------------------------------------
 interface CanvasProps {
   nodes: Node[];
   edges: Edge[];
   setNodes: (fn: (nodes: Node[]) => Node[]) => void;
   setEdges: (fn: (edges: Edge[]) => Edge[]) => void;
-  onNodeContextMenu: (event: any, node: Node) => void;
+  onEdgeConnect?: (params: Connection) => void;
 }
 
+// ------------------------------------
+// CANVAS COMPONENT
+// ------------------------------------
 export default function Canvas({
   nodes,
   edges,
   setNodes,
   setEdges,
-  onNodeContextMenu
+  onEdgeConnect
 }: CanvasProps) {
 
-  // Atualiza nós (drag, resize, move)
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+
+  // ------------------------------------
+  // MOVIMENTAÇÃO DE NÓS
+  // ------------------------------------
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setNodes((prev) => {
-        const updated = applyNodeChanges(changes, prev);
+      setNodes((prevNodes) => {
+        const updated = applyNodeChanges(changes, prevNodes);
 
-        // --- TYPE NARROWING SEGURO ---
-        const drag = changes.find(
-          (c): c is NodeChange & { id: string } =>
-            c.type === "position" && "id" in c
-        );
+        const move = changes.find((c) => c.type === "position");
+        if (!move) return updated;
 
-        if (!drag) return updated;
+        const movedNode = updated.find((n) => n.id === move.id);
+        if (!movedNode) return updated;
 
-        const movingNode = updated.find((n) => n.id === drag.id);
-        if (!movingNode) return updated;
+        // ------------------------------------
+        // SE O NÓ É CONCEITO → verificar container
+        // ------------------------------------
+        if (movedNode.type === "concept") {
+          const px = movedNode.position.x;
+          const py = movedNode.position.y;
 
-        const parentOntology = detectConceptInsideOntology(movingNode, updated);
+          // ⭐ IMPORTANTE: tamanho real dos group nodes
+          const CONTAINER_W = 300;
+          const CONTAINER_H = 220;
 
-        if (parentOntology) {
-          console.log(
-            `Conceito '${movingNode.data.label}' está dentro da Ontologia '${parentOntology.data.label}'`
-          );
+          // margem para facilitar encaixe
+          const MARGIN = 12;
+
+          const container = updated.find((n) => {
+            if (!(n.type === "ontology" || n.type === "context")) return false;
+
+            return (
+              px >= n.position.x - MARGIN &&
+              px <= n.position.x + CONTAINER_W + MARGIN &&
+              py >= n.position.y - MARGIN &&
+              py <= n.position.y + CONTAINER_H + MARGIN
+            );
+          });
+
+          if (container) {
+            movedNode.parentNode = container.id;
+            movedNode.extent = "parent";
+
+            movedNode.position = {
+              x: px - container.position.x,
+              y: py - container.position.y
+            };
+          } else {
+            movedNode.parentNode = undefined;
+            movedNode.extent = undefined;
+          }
         }
 
-        return updated;
+        return [...updated];
       });
     },
     [setNodes]
   );
 
-  // Atualiza edges existentes
+  // ------------------------------------
+  // MUDANÇA DE ARESTAS
+  // ------------------------------------
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
       setEdges((prev) => applyEdgeChanges(changes, prev));
@@ -114,16 +122,32 @@ export default function Canvas({
     [setEdges]
   );
 
-  // Cria novas conexões
+  // ------------------------------------
+  // CRIAÇÃO DE ARESTAS
+  // ------------------------------------
   const onConnect = useCallback(
     (params: Connection) => {
-      setEdges((prev) => addEdge(params, prev));
+      setEdges((prev) => {
+        const newEdge = {
+          id: `edge_${params.source}_${params.target}_${Date.now()}`,
+          source: params.source!,
+          target: params.target!,
+          type: "smoothstep",
+          animated: false,
+        };
+        return [...prev, newEdge];
+      });
+
+      if (onEdgeConnect) onEdgeConnect(params);
     },
-    [setEdges]
+    [setEdges, onEdgeConnect]
   );
 
+  // ------------------------------------
+  // JSX
+  // ------------------------------------
   return (
-    <div className="canvas-area" style={{ width: "100%", height: "100%" }}>
+    <div style={{ width: "100%", height: "100%" }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -131,7 +155,7 @@ export default function Canvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeContextMenu={onNodeContextMenu}
+        onInit={setRfInstance}
         fitView
         defaultEdgeOptions={{ type: "smoothstep" }}
       >

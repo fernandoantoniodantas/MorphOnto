@@ -1,48 +1,61 @@
-import { Handle, Position } from "reactflow";
+// src/nodes/OntologyNode.tsx
+import React from "react";
+import type { NodeProps } from "reactflow";
 
-interface NodeProps {
-  data: { label: string };
+export interface OntologyNodeData {
+  id: string;
+  label: string;
+  mode: "entity" | "context";
+  onContextMenu?: (e: React.MouseEvent, id: string) => void;
 }
 
-export default function OntologyNode({ data }: NodeProps) {
+export default function OntologyNode({ data }: NodeProps<OntologyNodeData>) {
+  const color = data.mode === "entity" ? "#256eff" : "#7c3aed";
+
   return (
     <div
+      onContextMenu={(e) => {
+        e.preventDefault();
+        data.onContextMenu?.(e, data.id);
+      }}
       style={{
-        padding: "12px 16px",
-        background: "#d1e7dd",
-        border: "2px solid #86c2a5",
-        borderRadius: "10px",
-        fontWeight: "600",
-        color: "#0f5132",
-        minWidth: "150px",
-        textAlign: "center",
         position: "relative",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+        width: 300,
+        height: 220,
+        boxSizing: "border-box",
+
+        border: `3px solid ${color}`,
+        borderRadius: 10,
+
+        background: "transparent",
+
+        display: "flex",
+        flexDirection: "column",
+
+        pointerEvents: "none",      // ⭐ NÃO BLOQUEAR CLIQUES
       }}
     >
-      {/* Saída */}
-      <Handle
-        type="source"
-        position={Position.Right}
+      {/* título */}
+      <div
         style={{
-          background: "#198754",
-          width: 12,
-          height: 12,
-          borderRadius: "50%",
+          pointerEvents: "auto",    // menu funciona
+          userSelect: "none",
+          background: color,
+          color: "white",
+          padding: "6px 10px",
+          fontWeight: "bold",
+          borderRadius: "6px 6px 0 0",
+          fontSize: 13,
         }}
-      />
+      >
+        {data.label}
+      </div>
 
-      🟩 {data.label}
-
-      {/* Entrada */}
-      <Handle
-        type="target"
-        position={Position.Left}
+      {/* área interna: VAZIA para conceitos */}
+      <div
         style={{
-          background: "#198754",
-          width: 12,
-          height: 12,
-          borderRadius: "50%",
+          flex: 1,
+          pointerEvents: "none",    // deixa conceitos clicáveis
         }}
       />
     </div>

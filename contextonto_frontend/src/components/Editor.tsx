@@ -1,168 +1,300 @@
+// src/components/Editor.tsx
 import React, { useState, useCallback } from "react";
-import "../styles/editor.css";
+import type { Node, Edge } from "reactflow";
 
 import Sidebar from "./Sidebar";
 import Canvas from "./Canvas";
-import OutputPanel from "./OutputPanel";
-
-import type { Node, Edge } from "reactflow";
-
+import ContextMenu from "./ContextMenu";
 import { generateCtx } from "../utils/generateCtx";
 
+// ---------------------------------------------
+// TYPES
+// ---------------------------------------------
+type CompileResponse = {
+  owl?: string;
+  dot?: string;
+  error?: string;
+};
+
+// Gera ID único
+function createNodeId(): string {
+  return `node_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+const initialNodes: Node[] = [];
+const initialEdges: Edge[] = [];
+
 export default function Editor() {
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+  // ---------------------------------------------
+  // ESTADOS GLOBAIS
+  // ---------------------------------------------
+  const [nodes, setNodes] = useState<Node[]>(initialNodes);
+  const [edges, setEdges] = useState<Edge[]>(initialEdges);
 
-  const [ctxOutput, setCtxOutput] = useState("");
-  const [owlOutput, setOwlOutput] = useState("");
-  const [dotOutput, setDotOutput] = useState("");
+  const [ctxText, setCtxText] = useState("");
+  const [owlText, setOwlText] = useState("");
+  const [dotText, setDotText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isCompiling, setIsCompiling] = useState(false);
 
-  const [contextMenu, setContextMenu] = useState({
-    x: 0,
-    y: 0,
-    nodeId: null as string | null
-  });
+  // ---------------------------------------------
+  // CONTEXT MENU STATE
+  // ---------------------------------------------
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-  const handleNodeContextMenu = useCallback((event: any, node: Node) => {
+  const openContextMenu = useCallback((event: React.MouseEvent, nodeId: string) => {
     event.preventDefault();
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-      nodeId: node.id
-    });
+    setMenuPos({ x: event.clientX, y: event.clientY });
+    setSelectedNodeId(nodeId);
+    setMenuVisible(true);
   }, []);
 
-  const closeContextMenu = () =>
-    setContextMenu({ x: 0, y: 0, nodeId: null });
+  const closeContextMenu = useCallback(() => {
+    setMenuVisible(false);
+    setSelectedNodeId(null);
+  }, []);
 
-  const renameNode = () => {
-    if (!contextMenu.nodeId) return;
-    const newName = prompt("Novo nome:");
-    if (!newName) return;
+  // ---------------------------------------------
+  // RENOMEAR NODE
+  // ---------------------------------------------
+  const handleRename = useCallback(
+    (id: string) => {
+      const node = nodes.find((n) => n.id === id);
+      if (!node) return;
 
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === contextMenu.nodeId
-          ? { ...n, data: { ...n.data, label: newName } }
-          : n
-      )
-    );
-    closeContextMenu();
-  };
+      const novoNome = prompt("Novo nome:", node.data.label);
+      if (!novoNome) return;
 
-  const deleteNode = () => {
-    if (!contextMenu.nodeId) return;
+      setNodes((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, data: { ...n.data, label: novoNome } } : n))
+      );
 
-    setNodes((nds) => nds.filter((n) => n.id !== contextMenu.nodeId));
-    setEdges((eds) =>
-      eds.filter(
-        (e) =>
-          e.source !== contextMenu.nodeId &&
-          e.target !== contextMenu.nodeId
-      )
-    );
-    closeContextMenu();
-  };
-
-  const handleAddNode = useCallback(
-    (type: string) => {
-      if (type === "context") {
-        const exists = nodes.some((n) => n.type === "context");
-        if (exists) {
-          alert("Só é permitido um único contexto.");
-          return;
-        }
-      }
-
-      const id = `${type}_${nodes.length + 1}`;
-      const newNode: Node = {
-        id,
-        type,
-        data: { label: `${type} ${nodes.length + 1}` },
-        position: { x: 200, y: 120 + nodes.length * 80 }
-      };
-
-      setNodes((prev) => [...prev, newNode]);
+      closeContextMenu();
     },
-    [nodes]
+    [nodes, closeContextMenu]
   );
 
-  const handleGenerateCtx = () => {
-    const text = generateCtx(nodes, edges);
-    setCtxOutput(text);
-  };
+  // ---------------------------------------------
+  // EXCLUIR NODE
+  // ---------------------------------------------
+  const handleDelete = useCallback(
+    (id: string) => {
+      setNodes((prev) => prev.filter((n) => n.id !== id));
+      setEdges((prev) => prev.filter((e) => e.source !== id && e.target !== id));
+      closeContextMenu();
+    },
+    [closeContextMenu]
+  );
 
-  const compileBackend = async () => {
+  // ---------------------------------------------
+  // ADICIONAR CONCEITO DENTRO DA ONTOLOGIA
+  // ---------------------------------------------
+  const handleAddConceptInside = useCallback(
+    (ontoId: string) => {
+      const id = createNodeId();
+
+      const newConcept: Node = {
+        id,
+        type: "concept",
+        parentNode: ontoId,
+        extent: "parent",
+        position: { x: 30, y: 60 },
+        data: {
+          label: `Concept_${id.slice(-4)}`
+        }
+      };
+
+      setNodes((prev) => [...prev, newConcept]);
+      closeContextMenu();
+    },
+    [closeContextMenu]
+  );
+
+  // ---------------------------------------------
+  // ADICIONAR NÓS (sidebar)
+  // ---------------------------------------------
+  const handleAddNode = useCallback(
+    (kind: string) => {
+      const baseX = 100 + nodes.length * 30;
+      const baseY = 80 + nodes.length * 20;
+
+      if (kind === "entity") {
+        const id = createNodeId();
+        const newNode: Node = {
+          id,
+          type: "ontology",
+          position: { x: baseX, y: baseY },
+          data: {
+            id, // ⭐ fundamental
+            label: "EntityOntology",
+            mode: "entity",
+            onContextMenu: openContextMenu
+          }
+        };
+        setNodes((prev) => [...prev, newNode]);
+        return;
+      }
+
+      if (kind === "context") {
+        const id = createNodeId();
+        const newNode: Node = {
+          id,
+          type: "context",
+          position: { x: baseX + 200, y: baseY },
+          data: {
+            id,
+            label: "ContextOntology",
+            mode: "context",
+            onContextMenu: openContextMenu
+          }
+        };
+        setNodes((prev) => [...prev, newNode]);
+        return;
+      }
+
+      if (kind === "concept") {
+        const id = createNodeId();
+        const newNode: Node = {
+          id,
+          type: "concept",
+          position: { x: baseX + 120, y: baseY + 80 },
+          data: {
+            label: `Concept_${id.slice(-4)}`
+          }
+        };
+        setNodes((prev) => [...prev, newNode]);
+        return;
+      }
+    },
+    [nodes, openContextMenu]
+  );
+
+  // ---------------------------------------------
+  // GERAR CTX
+  // ---------------------------------------------
+  const handleGenerateCtx = useCallback(() => {
     const ctx = generateCtx(nodes, edges);
+    setCtxText(ctx);
+    setError(null);
+  }, [nodes, edges]);
 
-    const resp = await fetch("http://localhost:5001/compile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ctx })
-    });
+  // ---------------------------------------------
+  // COMPILAR CTX → OWL/DOT
+  // ---------------------------------------------
+  const handleCompile = useCallback(async () => {
+    try {
+      setIsCompiling(true);
+      setError(null);
 
-    const data = await resp.json();
+      const ctx = ctxText.trim() || generateCtx(nodes, edges);
 
-    if (data.success) {
-      setOwlOutput(data.owl || "Sem OWL");
-      setDotOutput(data.dot || "Sem DOT");
-    } else {
-      setOwlOutput("Erro ao gerar OWL:\n" + data.errors);
-      setDotOutput("");
+      if (!ctx.trim()) {
+        setError("Nada para compilar.");
+        setIsCompiling(false);
+        return;
+      }
+
+      const resp = await fetch("http://localhost:8000/compile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ctx })
+      });
+
+      if (!resp.ok) throw new Error("Erro no servidor.");
+
+      const data = (await resp.json()) as CompileResponse;
+
+      if (data.error) {
+        setError(data.error);
+        setOwlText("");
+        setDotText("");
+      } else {
+        setOwlText(data.owl ?? "");
+        setDotText(data.dot ?? "");
+      }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setIsCompiling(false);
     }
-  };
+  }, [ctxText, nodes, edges]);
 
+  // ---------------------------------------------
+  // LAYOUT: 3 COLUNAS
+  // ---------------------------------------------
   return (
-    <div className="editor-container" onClick={closeContextMenu}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "260px 1fr 420px",
+        height: "100vh",
+        width: "100vw",
+        overflow: "hidden"
+      }}
+    >
+      {/* SIDEBAR */}
+      <div style={{ borderRight: "1px solid #ddd", padding: 16, background: "#f8f9fa" }}>
+        <Sidebar
+          addEntityOntology={() => handleAddNode("entity")}
+          addContextOntology={() => handleAddNode("context")}
+          addConcept={() => handleAddNode("concept")}
+          onGenerateCtx={handleGenerateCtx}
+          onCompile={handleCompile}
+        />
+      </div>
 
-      <Sidebar
-        onAddNode={handleAddNode}
-        onGenerateCtx={handleGenerateCtx}
-        onCompile={compileBackend}
-      />
+      {/* CANVAS */}
+      <div style={{ position: "relative" }}>
+        <Canvas nodes={nodes} edges={edges} setNodes={setNodes} setEdges={setEdges} />
+      </div>
 
-      <Canvas
-        nodes={nodes}
-        edges={edges}
-        setNodes={setNodes}
-        setEdges={setEdges}
-        onNodeContextMenu={handleNodeContextMenu}
-      />
-
-      <OutputPanel
-        ctxText={ctxOutput}
-        owlText={owlOutput}
-        dotText={dotOutput}
-      />
-
-      {contextMenu.nodeId && (
-        <div
-          style={{
-            position: "absolute",
-            top: contextMenu.y,
-            left: contextMenu.x,
-            background: "white",
-            border: "1px solid #ccc",
-            padding: "6px",
-            zIndex: 999,
-            borderRadius: "4px"
-          }}
-        >
-          <div
-            style={{ padding: "4px 8px", cursor: "pointer" }}
-            onClick={renameNode}
-          >
-            Renomear
-          </div>
-
-          <div
-            style={{ padding: "4px 8px", cursor: "pointer", color: "red" }}
-            onClick={deleteNode}
-          >
-            Excluir
-          </div>
+      {/* PAINEL DIREITO */}
+      <div
+        style={{
+          borderLeft: "1px solid #ddd",
+          padding: 12,
+          overflowY: "auto",
+          background: "#fafafa",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12
+        }}
+      >
+        <div>
+          <label>CTX</label>
+          <textarea value={ctxText} readOnly style={{ width: "100%", height: 180 }} />
         </div>
-      )}
+
+        <div>
+          <label>OWL</label>
+          <textarea value={owlText} readOnly style={{ width: "100%", height: 180 }} />
+        </div>
+
+        <div>
+          <label>DOT</label>
+          <textarea value={dotText} readOnly style={{ width: "100%", height: 180 }} />
+        </div>
+
+        <div style={{ fontSize: 12 }}>
+          {isCompiling && "Compilando…"}
+          {!isCompiling && !error && "Pronto."}
+          {error && <span style={{ color: "#b00020" }}>Erro: {error}</span>}
+        </div>
+      </div>
+
+      {/* CONTEXT MENU */}
+      <ContextMenu
+        x={menuPos.x}
+        y={menuPos.y}
+        visible={menuVisible}
+        nodeId={selectedNodeId}
+        onRename={handleRename}
+        onDelete={handleDelete}
+        onAddConcept={handleAddConceptInside}
+        onClose={closeContextMenu}
+      />
     </div>
   );
 }

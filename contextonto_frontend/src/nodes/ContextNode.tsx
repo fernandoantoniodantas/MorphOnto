@@ -1,81 +1,62 @@
-import { Handle, Position } from "reactflow";
+// src/nodes/ContextNode.tsx
+import React from "react";
+import type { NodeProps } from "reactflow";
 
-interface NodeProps {
-  data: { label: string };
+export interface ContextNodeData {
+  id: string;
+  label: string;
+  mode: "context";
+  onContextMenu?: (e: React.MouseEvent, id: string) => void;
 }
 
-export default function ContextNode({ data }: NodeProps) {
+export default function ContextNode({ data }: NodeProps<ContextNodeData>) {
+  const color = "#2b8a3e"; // verde
+
   return (
     <div
+      onContextMenu={(e) => {
+        e.preventDefault();
+        data.onContextMenu?.(e, data.id);
+      }}
       style={{
-        padding: "12px 18px",
-        background: "#cfe2ff",
-        border: "2px solid #84b0f2",
-        borderRadius: "12px",
-        fontWeight: "bold",
-        color: "#0a3e78",
-        minWidth: "200px",
-        minHeight: "60px",
-        textAlign: "center",
-        fontSize: "16px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-        position: "relative"
+        position: "relative",
+        width: 300,
+        height: 220,
+        boxSizing: "border-box",
+
+        border: `3px solid ${color}`,
+        borderRadius: 10,
+        background: "transparent",
+
+        display: "flex",
+        flexDirection: "column",
+
+        pointerEvents: "none",   // ⭐ fundamental (não bloquear edges)
       }}
     >
+      {/* título */}
+      <div
+        style={{
+          pointerEvents: "auto",   // permite contexto/renomear/excluir
+          userSelect: "none",
+          background: color,
+          color: "white",
+          padding: "6px 10px",
+          fontWeight: "bold",
+          borderRadius: "6px 6px 0 0",
+          fontSize: 13,
+        }}
+      >
+        {data.label}
+      </div>
 
-      {/* TOP HANDLES */}
-      <Handle
-        type="source"
-        position={Position.Top}
-        id="top-source"
-        style={{ background: "#0d6efd", width: 12, height: 12 }}
+      {/* área interna do grupo */}
+      <div
+        style={{
+          flex: 1,
+          pointerEvents: "none",   // permite que conceitos recebam cliques
+        }}
       />
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="top-target"
-        style={{ background: "#0d6efd", width: 12, height: 12 }}
-      />
-
-      {/* RIGHT HANDLES */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="right-source"
-        style={{ background: "#0d6efd", width: 12, height: 12 }}
-      />
-
-      {/* LABEL */}
-      📘 {data.label}
-
-      {/* LEFT HANDLES */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="left-target"
-        style={{ background: "#0d6efd", width: 12, height: 12 }}
-      />
-      <Handle
-        type="source"
-        position={Position.Left}
-        id="left-source"
-        style={{ background: "#0d6efd", width: 12, height: 12 }}
-      />
-
-      {/* BOTTOM HANDLES */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="bottom-source"
-        style={{ background: "#0d6efd", width: 12, height: 12 }}
-      />
-      <Handle
-        type="target"
-        position={Position.Bottom}
-        id="bottom-target"
-        style={{ background: "#0d6efd", width: 12, height: 12 }}
-      />
-
     </div>
   );
 }
